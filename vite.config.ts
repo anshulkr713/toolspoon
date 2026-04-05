@@ -30,8 +30,8 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024
       },
       manifest: {
-        name: 'JSON Formattor',
-        short_name: 'Formattor',
+        name: 'ToolSpoon',
+        short_name: 'ToolSpoon',
         description: 'Private, browser-based JSON formatter, visualizer, JSON to table tool, schema generator, diff tool, repair tool, validator, converter, and viewer.',
         start_url: '/',
         scope: '/',

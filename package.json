@@ -1,5 +1,5 @@
 {
-  "name": "jsonformattor",
+  "name": "toolspoon",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -33,6 +33,7 @@
     "idb-keyval": "^6.2.2",
     "js-yaml": "^4.1.1",
     "papaparse": "^5.5.3",
+    "xlsx": "^0.18.5",
     "xml-js": "^1.6.11"
   }
 }

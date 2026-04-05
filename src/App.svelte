@@ -31,6 +31,18 @@
     { action: 'CONVERT', label: 'Convert' },
   ];
 
+  function getToolName(action: Action, targetFormat: TargetFormat) {
+    if (action === 'CONVERT') return `JSON to ${targetFormat}`;
+    if (action === 'VISUALIZE') return 'JSON Visualizer';
+    if (action === 'TABLE') return 'JSON to Table';
+    if (action === 'DIFF') return 'JSON Diff';
+    if (action === 'SCHEMA') return 'Schema Generator';
+    if (action === 'MINIFY') return 'JSON Minifier';
+    if (action === 'VALIDATE') return 'JSON Validator';
+    if (action === 'REPAIR') return 'JSON Repair';
+    return 'JSON Formatter';
+  }
+
   function humanizeAction(action: Action, targetFormat: TargetFormat) {
     if (action === 'CONVERT') return `Convert → ${targetFormat}`;
     if (action === 'VISUALIZE') return 'Visualize';
@@ -78,7 +90,7 @@
   let currentAction = $state<Action>('FORMAT');
   let currentSpace = $state<string | number>(2);
   let currentTargetFormat = $state<TargetFormat>('YAML');
-  let fileInput: HTMLInputElement;
+  let fileInput = $state<HTMLInputElement>();
   let activeUploadTarget = $state<UploadTarget>('primary');
   let validationSuccess = $state(false);
   let isProcessing = $state(false);
@@ -99,15 +111,19 @@
       || outputViewMode === 'table'
   );
   let activeActionLabel = $derived(humanizeAction(currentAction, currentTargetFormat));
+  let activeToolName = $derived(getToolName(currentAction, currentTargetFormat));
   let diffErrorMessage = $derived.by(() => {
     if (!jsonError) return '';
     return jsonError.source === 'compare' ? `Updated JSON line ${jsonError.line}: ${jsonError.message}` : `Original JSON line ${jsonError.line}: ${jsonError.message}`;
   });
   let showDiffViewOption = $derived(currentAction === 'DIFF' || outputViewMode === 'diff');
   let showTableViewOption = $derived(currentAction === 'TABLE' || outputViewMode === 'table');
+  let isTooLargeForDOM = $derived((outputCode || inputCode).length > 2_000_000 && outputViewMode !== 'tree' && outputViewMode !== 'table');
+  
   let parsedJson = $derived.by(() => {
     const src = outputCode || inputCode;
     if (!src.trim()) return undefined;
+    if (isTooLargeForDOM && usesStructuredOutput) return undefined;
     try {
       return JSON.parse(src);
     } catch {
@@ -333,7 +349,7 @@
 
   function handleUpload(target: UploadTarget = 'primary') {
     activeUploadTarget = target;
-    fileInput.click();
+    fileInput?.click();
   }
 
   function onFileSelected(event: Event) {
@@ -469,12 +485,13 @@
     <div class="header-brand">
       <div class="logo-mark">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="16 18 22 12 16 6"></polyline>
-          <polyline points="8 6 2 12 8 18"></polyline>
+          <path d="M7 17l9.2-9.2"></path>
+          <path d="M11 6c1.66-1.66 4.34-1.66 6 0s1.66 4.34 0 6l-7 7a2.12 2.12 0 0 1-3 0v0a2.12 2.12 0 0 1 0-3L11 6Z"></path>
         </svg>
       </div>
-      <span class="app-title">JSON Formattor</span>
-      <span class="popout-badge">{popoutMode === 'input' ? 'Input' : humanizeViewMode(outputViewMode)}</span>
+      <span class="app-title">ToolSpoon</span>
+      <span class="tool-divider">/</span>
+      <span class="tool-name">{popoutMode === 'input' ? 'Input View' : humanizeViewMode(outputViewMode) + ' View'}</span>
     </div>
     {#if popoutMode === 'output'}
       <div class="panel-meta">
@@ -520,6 +537,26 @@
         <TableView data={parsedJson} />
       {:else if outputViewMode === 'graph' && parsedJson !== undefined}
         <GraphView data={parsedJson} />
+      {:else if isTooLargeForDOM && usesStructuredOutput}
+        <div class="view-empty">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-tertiary); margin-bottom: 12px;">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          <span style="font-weight: 500; font-size: 15px; color: var(--text-primary); display: block;">Dataset Too Large</span>
+          <span style="margin-top: 8px; color: var(--text-secondary); max-width: 400px; line-height: 1.5; display: block;">This file is {((outputCode || inputCode).length / 1024 / 1024).toFixed(1)} MB. Visualizing datasets larger than 2MB may crash your browser. Please use the Code view or reduce the file size.</span>
+        </div>
+      {:else if isTooLargeForDOM && usesStructuredOutput}
+        <div class="view-empty">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-tertiary); margin-bottom: 12px;">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          <span style="font-weight: 500; font-size: 15px; color: var(--text-primary); display: block;">Dataset Too Large</span>
+          <span style="margin-top: 8px; color: var(--text-secondary); max-width: 400px; line-height: 1.5; display: block;">This file is {((outputCode || inputCode).length / 1024 / 1024).toFixed(1)} MB. Visualizing datasets larger than 2MB may crash your browser. Please use the Code view or reduce the file size.</span>
+        </div>
       {:else if parsedJson === undefined && (outputCode || inputCode)}
         <div class="view-empty"><span>Invalid JSON — cannot render this view</span></div>
       {:else}
@@ -534,11 +571,13 @@
     <div class="header-brand">
       <div class="logo-mark">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="16 18 22 12 16 6"></polyline>
-          <polyline points="8 6 2 12 8 18"></polyline>
+          <path d="M7 17l9.2-9.2"></path>
+          <path d="M11 6c1.66-1.66 4.34-1.66 6 0s1.66 4.34 0 6l-7 7a2.12 2.12 0 0 1-3 0v0a2.12 2.12 0 0 1 0-3L11 6Z"></path>
         </svg>
       </div>
-      <span class="app-title">JSON Formattor</span>
+      <span class="app-title">ToolSpoon</span>
+      <span class="tool-divider">/</span>
+      <span class="tool-name">{activeToolName}</span>
       {#if isOffline}
         <span class="offline-badge">Offline</span>
       {/if}
@@ -799,9 +838,7 @@
                   <button class="dropdown-item {outputViewMode === 'form' ? 'selected' : ''}" onclick={() => { outputViewMode = 'form'; showViewMenu = false; }}>Form</button>
                   <button class="dropdown-item {outputViewMode === 'text' ? 'selected' : ''}" onclick={() => { outputViewMode = 'text'; showViewMenu = false; }}>Text</button>
                   <button class="dropdown-item {outputViewMode === 'view' ? 'selected' : ''}" onclick={() => { outputViewMode = 'view'; showViewMenu = false; }}>Visual</button>
-                  {#if showTableViewOption}
-                    <button class="dropdown-item {outputViewMode === 'table' ? 'selected' : ''}" onclick={() => { outputViewMode = 'table'; showViewMenu = false; }}>Table</button>
-                  {/if}
+                  <button class="dropdown-item {outputViewMode === 'table' || currentAction === 'TABLE' ? 'selected' : ''}" onclick={() => { setAction('TABLE'); showViewMenu = false; }}>Table</button>
                   <div class="dropdown-divider"></div>
                   <button class="dropdown-item {outputViewMode === 'graph' ? 'selected' : ''}" onclick={() => { outputViewMode = 'graph'; showViewMenu = false; }}>Graph</button>
                 </div>
@@ -830,7 +867,17 @@
           </div>
         {/if}
         <div class="panel-editor">
-          {#if outputViewMode === 'diff' && parsedDiffReport}
+          {#if isTooLargeForDOM && usesStructuredOutput}
+            <div class="view-empty">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-tertiary); margin-bottom: 12px;">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+              <span style="font-weight: 500; font-size: 15px; color: var(--text-primary); display: block;">Dataset Too Large</span>
+              <span style="margin-top: 8px; color: var(--text-secondary); max-width: 400px; line-height: 1.5; display: block;">This file is {((outputCode || inputCode).length / 1024 / 1024).toFixed(1)} MB. Visualizing datasets larger than 2MB may crash your browser. Please use the Code view or reduce the file size.</span>
+            </div>
+          {:else if outputViewMode === 'diff' && parsedDiffReport}
             <DiffView report={parsedDiffReport} />
           {:else if outputViewMode === 'code'}
             <Editor bind:value={outputCode} readonly={true} />
@@ -915,14 +962,14 @@
       </div>
       <div class="footer-col">
         <h4>Views</h4>
-        <a href="#" onclick={(e) => { e.preventDefault(); outputViewMode = 'tree'; }}>Tree View</a>
-        <a href="#" onclick={(e) => { e.preventDefault(); outputViewMode = 'form'; }}>Form View</a>
-        <a href="#" onclick={(e) => { e.preventDefault(); outputViewMode = 'graph'; }}>Graph View</a>
-        <a href="#" onclick={(e) => { e.preventDefault(); outputViewMode = 'view'; }}>Card View</a>
+        <a href="#tree" onclick={(e) => { e.preventDefault(); outputViewMode = 'tree'; }}>Tree View</a>
+        <a href="#form" onclick={(e) => { e.preventDefault(); outputViewMode = 'form'; }}>Form View</a>
+        <a href="#graph" onclick={(e) => { e.preventDefault(); outputViewMode = 'graph'; }}>Graph View</a>
+        <a href="#card" onclick={(e) => { e.preventDefault(); outputViewMode = 'view'; }}>Card View</a>
       </div>
     </div>
     <div class="footer-bottom">
-      <span>JSON Formattor · Local-only · No data leaves your browser</span>
+      <span>ToolSpoon · Local-only · No data leaves your browser</span>
     </div>
   </footer>
 </div>
@@ -1029,6 +1076,19 @@
     font-family: 'Plus Jakarta Sans', sans-serif;
     letter-spacing: -0.02em;
     color: var(--text-primary);
+    white-space: nowrap;
+  }
+
+  .tool-divider {
+    color: var(--text-tertiary);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .tool-name {
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
     white-space: nowrap;
   }
 

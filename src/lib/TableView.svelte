@@ -1,5 +1,6 @@
 <script lang="ts">
   import { buildTableModel, formatTableCell, type TableCell } from './tableData';
+  import Papa from 'papaparse';
 
   let { data } = $props<{ data: any }>();
 
@@ -28,12 +29,46 @@
     );
   });
 
+  let page = $state(1);
+  let pageSize = 100;
+  const paginatedRows = $derived(filteredRows.slice(0, page * pageSize));
+  const hasMoreRows = $derived(filteredRows.length > page * pageSize);
+
+  $effect(() => {
+    // Reset page when search changes
+    if (searchTerm !== undefined) {
+      page = 1;
+    }
+  });
+
   function getCellTone(value: TableCell | undefined) {
     if (value === undefined) return 'empty';
     if (value === null) return 'null';
     if (typeof value === 'number') return 'number';
     if (typeof value === 'boolean') return 'boolean';
     return 'string';
+  }
+
+  function exportCSV() {
+    const csv = Papa.unparse({
+      fields: tableModel.columns,
+      data: tableModel.rows.map((row) => tableModel.columns.map((column) => row[column] ?? '')),
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'table-export.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function exportXLSX() {
+    const XLSX = await import('xlsx');
+    const ws = XLSX.utils.json_to_sheet(tableModel.rows, { header: tableModel.columns });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    XLSX.writeFile(wb, "table-export.xlsx");
   }
 </script>
 
@@ -49,6 +84,17 @@
       <span class="sr-only">Search table rows</span>
       <input bind:value={search} type="search" placeholder="Search columns or values" />
     </label>
+
+    <div class="export-actions">
+      <button class="export-btn" onclick={exportCSV} title="Download Table as CSV">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        Download CSV
+      </button>
+      <button class="export-btn" onclick={exportXLSX} title="Download Table as Excel Spreadsheet">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        Download XLSX
+      </button>
+    </div>
   </div>
 
   {#if tableModel.rowCount === 0 || tableModel.columnCount === 0}
@@ -87,19 +133,30 @@
               </td>
             </tr>
           {:else}
-            {#each filteredRows as row}
+            {#each paginatedRows as row}
               <tr>
                 {#each tableModel.columns as column}
                   <td class={`tone-${getCellTone(row[column])}`}>
                     {#if row[column] === undefined}
                       <span class="cell-empty">—</span>
                     {:else}
-                      {formatTableCell(row[column])}
+                      <span class="cell-val" title={String(formatTableCell(row[column]))}>
+                        {formatTableCell(row[column])}
+                      </span>
                     {/if}
                   </td>
                 {/each}
               </tr>
             {/each}
+            {#if hasMoreRows}
+              <tr>
+                <td colspan={tableModel.columns.length || 1} class="load-more-cell">
+                  <button class="load-more-btn" onclick={() => page++}>
+                    Load {Math.min(pageSize, filteredRows.length - page * pageSize)} more rows (of {filteredRows.length - page * pageSize} remaining)
+                  </button>
+                </td>
+              </tr>
+            {/if}
           {/if}
         </tbody>
       </table>
@@ -215,6 +272,37 @@
     box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.35);
   }
 
+  .export-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .export-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--tbl-input-bg);
+    border: 1px solid var(--tbl-input-border);
+    color: var(--text-primary);
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .export-btn:hover {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: rgba(99, 102, 241, 0.3);
+    color: #818cf8;
+  }
+
+  .export-btn svg {
+    opacity: 0.8;
+  }
+
   .column-strip {
     display: flex;
     gap: 8px;
@@ -260,7 +348,17 @@
     font-size: 12px;
     vertical-align: top;
     max-width: 320px;
-    overflow-wrap: anywhere;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .cell-val {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 290px;
   }
 
   .data-table tbody tr:hover td {
@@ -294,6 +392,27 @@
   .empty-search {
     text-align: center;
     color: var(--text-muted);
+  }
+
+  .load-more-cell {
+    text-align: center;
+    padding: 16px !important;
+  }
+
+  .load-more-btn {
+    background: rgba(99, 102, 241, 0.1);
+    color: #818cf8;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+
+  .load-more-btn:hover {
+    background: rgba(99, 102, 241, 0.2);
   }
 
   .table-empty {

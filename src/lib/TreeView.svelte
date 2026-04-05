@@ -8,7 +8,8 @@
     rootCollapsed?: boolean;
   }>();
 
-  let collapsed = $state(false);
+  let collapsed = $state(depth > 0);
+  let maxVisible = $state(100);
 
   function getType(val: any): string {
     if (val === null) return 'null';
@@ -35,10 +36,16 @@
         : Object.entries(data as Record<string, any>).map(([k, v]) => ({ key: k, value: v }))
       : []
   );
+  
+  const visibleEntries = $derived(entries.slice(0, maxVisible));
+  const hasMore = $derived(entries.length > maxVisible);
 
-  $effect(() => {
-    collapsed = rootCollapsed && depth > 1;
-  });
+  function truncateString(str: string) {
+    if (str.length > 500) {
+      return str.substring(0, 500) + ' ... [truncated ' + (str.length - 500) + ' characters]';
+    }
+    return str;
+  }
 </script>
 
 <div class="tree-node" style="--depth: {depth}">
@@ -71,7 +78,7 @@
       {/if}
 
       {#if type === 'string'}
-        <span class="tree-value string">"{data}"</span>
+        <span class="tree-value string">"{truncateString(data)}"</span>
       {:else if type === 'number'}
         <span class="tree-value number">{data}</span>
       {:else if type === 'boolean'}
@@ -79,16 +86,23 @@
       {:else if type === 'null'}
         <span class="tree-value null">null</span>
       {:else}
-        <span class="tree-value">{String(data)}</span>
+        <span class="tree-value">{truncateString(String(data))}</span>
       {/if}
     </div>
   {/if}
 
   {#if isExpandable && !collapsed}
     <div class="tree-children">
-      {#each entries as entry (entry.key)}
+      {#each visibleEntries as entry (entry.key)}
         <TreeView data={entry.value} label={entry.key} depth={depth + 1} />
       {/each}
+      {#if hasMore}
+        <div class="tree-row">
+          <button class="load-more-btn" onclick={() => maxVisible += 100}>
+            Load {Math.min(100, entries.length - maxVisible)} more (of {entries.length - maxVisible} remaining)
+          </button>
+        </div>
+      {/if}
     </div>
   {/if}
 </div>
@@ -191,5 +205,24 @@
   .tree-children {
     border-left: 1px solid rgba(63, 63, 70, 0.5);
     margin-left: calc(var(--depth) * 20px + 7px);
+  }
+
+  .load-more-btn {
+    background: rgba(99, 102, 241, 0.1);
+    color: #818cf8;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-left: calc(var(--depth) * 20px + 20px);
+    margin-top: 4px;
+    margin-bottom: 4px;
+    transition: background 0.1s;
+  }
+
+  .load-more-btn:hover {
+    background: rgba(99, 102, 241, 0.2);
   }
 </style>
