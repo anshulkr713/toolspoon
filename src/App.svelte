@@ -938,6 +938,32 @@
     </footer>
   </div>
 
+  <article class="seo-content">
+    <h2>What is ToolSpoon?</h2>
+    <p>ToolSpoon is a fast, local-first JSON formatting and visualization suite built directly into your browser. Instead of uploading your sensitive data to an external server, ToolSpoon runs all scripts locally on your machine, ensuring complete privacy.</p>
+    
+    <h2>What can you do with it?</h2>
+    <p>With ToolSpoon, you can instantly format, minify, or validate arbitrary JSON data. Additionally, our dedicated Graph, Table, and Tree views can help you visualize complex JSON objects and export them perfectly to CSV or YAML.</p>
+
+    <h2>Frequently Asked Questions</h2>
+    <div class="faq-item">
+      <h3>Is ToolSpoon secure?</h3>
+      <p>Yes. ToolSpoon never uploads your JSON data to any remote server or third party. All formatting, rendering, and parsing scripts are executed entirely within your device's browser memory.</p>
+    </div>
+    <div class="faq-item">
+      <h3>What is a JSON Formatter?</h3>
+      <p>A JSON formatter takes unindented or minified JSON (JavaScript Object Notation) strings and pretty-prints them by adding appropriate line breaks, spacing, and colored syntax to make the code human-readable.</p>
+    </div>
+    <div class="faq-item">
+      <h3>Can I open very large JSON files?</h3>
+      <p>ToolSpoon has optimization built specifically for scaling up. While traditional browser-based editors crash on big data, our tool is fine-tuned to parse files exceeding several megabytes. We recommend using the 'Code' tab for the largest of texts.</p>
+    </div>
+    <div class="faq-item">
+      <h3>What integrations are supported?</h3>
+      <p>You can natively convert any valid JSON code block into standard formats such as XML, YAML, and CSV tables with a single click. There are zero limits to your data extraction possibilities.</p>
+    </div>
+  </article>
+
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-col">
@@ -966,6 +992,13 @@
         <a href="#form" onclick={(e) => { e.preventDefault(); outputViewMode = 'form'; }}>Form View</a>
         <a href="#graph" onclick={(e) => { e.preventDefault(); outputViewMode = 'graph'; }}>Graph View</a>
         <a href="#card" onclick={(e) => { e.preventDefault(); outputViewMode = 'view'; }}>Card View</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="/about/">About Us</a>
+        <a href="/contact/">Contact Us</a>
+        <a href="/privacy/">Privacy Policy</a>
+        <a href="/terms/">Terms of Service</a>
       </div>
     </div>
     <div class="footer-bottom">
@@ -1713,6 +1746,39 @@
     background: #f59e0b;
   }
 
+  /* ── SEO Content ── */
+  .seo-content {
+    max-width: 960px;
+    margin: 60px auto 40px;
+    padding: 0 20px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .seo-content h2 {
+    color: var(--text-primary);
+    font-size: 18px;
+    font-weight: 700;
+    margin: 32px 0 16px;
+  }
+  .seo-content p {
+    margin-bottom: 16px;
+  }
+  .faq-item {
+    margin-bottom: 24px;
+    border-left: 2px solid var(--accent-border);
+    padding-left: 16px;
+  }
+  .faq-item h3 {
+    color: var(--text-primary);
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .faq-item p {
+    margin-bottom: 0;
+  }
+
   /* ── Footer ── */
   .site-footer {
     border-top: 1px solid var(--border);
@@ -1722,9 +1788,9 @@
 
   .footer-inner {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 32px;
-    max-width: 960px;
+    max-width: 1040px;
     margin: 0 auto;
   }
 
