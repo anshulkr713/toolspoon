@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
+  import type { ComponentType } from 'svelte';
   import { set, get } from 'idb-keyval';
-  import Editor from './lib/Editor.svelte';
   import { isDiffReport, type JsonValue } from './lib/diffJson';
   import { buildTableModel } from './lib/tableData';
   import { settings } from './stores/settings';
@@ -79,6 +79,8 @@
   let compareCode = $state('');
   let outputCode = $state('');
   let jsonError = $state<{ message: string; line: number; source: ErrorSource } | null>(null);
+  
+  let EditorComponent = $state<ComponentType>();
 
   let currentAction = $state<Action>('FORMAT');
   let currentSpace = $state<string | number>(2);
@@ -222,6 +224,10 @@
     window.addEventListener('appinstalled', handleAppInstalled);
     window.addEventListener('click', handleWindowClick);
     window.addEventListener('keydown', handleKeydown);
+
+    import('./lib/Editor.svelte').then(module => {
+      EditorComponent = module.default as ComponentType;
+    }).catch(console.error);
 
     worker = new Worker(new URL('./lib/jsonWorker.ts', import.meta.url), { type: 'module' });
     worker.onmessage = (e: MessageEvent<{ type: string; result?: string; message?: string; line?: number; source?: ErrorSource }>) => {
@@ -514,10 +520,10 @@
   </div>
   <div class="popout-body">
     {#if popoutMode === 'input'}
-      <Editor bind:value={inputCode} placeholder="JSON" />
+      {#if EditorComponent}<EditorComponent bind:value={inputCode} placeholder="JSON" />{/if}
     {:else}
       {#if outputViewMode === 'code'}
-        <Editor bind:value={outputCode} readonly={true} />
+        {#if EditorComponent}<EditorComponent bind:value={outputCode} readonly={true} />{/if}
       {:else if outputViewMode === 'tree' && parsedJson !== undefined}
         {#await import('./lib/TreeView.svelte') then { default: TreeView }}
           <div class="view-scroll"><TreeView data={parsedJson} /></div>
@@ -762,7 +768,7 @@
           </div>
         </div>
         <div class="panel-editor">
-          <Editor bind:value={inputCode} placeholder={currentAction === 'DIFF' ? 'Paste the original JSON here...' : getInputPlaceholder(currentAction)} />
+          {#if EditorComponent}<EditorComponent bind:value={inputCode} placeholder={currentAction === 'DIFF' ? 'Paste the original JSON here...' : getInputPlaceholder(currentAction)} />{/if}
         </div>
       </div>
 
@@ -783,7 +789,7 @@
             </div>
           </div>
           <div class="panel-editor">
-            <Editor bind:value={compareCode} placeholder="Paste the updated JSON here..." />
+            {#if EditorComponent}<EditorComponent bind:value={compareCode} placeholder="Paste the updated JSON here..." />{/if}
           </div>
         </div>
 
