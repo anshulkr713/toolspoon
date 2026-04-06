@@ -10,6 +10,7 @@ const rootDir = fileURLToPath(new URL('.', import.meta.url))
 
 export default defineConfig({
   build: {
+    sourcemap: true,
     rollupOptions: {
       input: {
         main: resolve(rootDir, 'index.html'),

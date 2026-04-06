@@ -2,13 +2,6 @@
   import { onMount, onDestroy } from 'svelte';
   import { set, get } from 'idb-keyval';
   import Editor from './lib/Editor.svelte';
-  import TreeView from './lib/TreeView.svelte';
-  import FormView from './lib/FormView.svelte';
-  import TextView from './lib/TextView.svelte';
-  import CardView from './lib/CardView.svelte';
-  import DiffView from './lib/DiffView.svelte';
-  import GraphView from './lib/GraphView.svelte';
-  import TableView from './lib/TableView.svelte';
   import { isDiffReport, type JsonValue } from './lib/diffJson';
   import { buildTableModel } from './lib/tableData';
   import { settings } from './stores/settings';
@@ -526,17 +519,29 @@
       {#if outputViewMode === 'code'}
         <Editor bind:value={outputCode} readonly={true} />
       {:else if outputViewMode === 'tree' && parsedJson !== undefined}
-        <div class="view-scroll"><TreeView data={parsedJson} /></div>
+        {#await import('./lib/TreeView.svelte') then { default: TreeView }}
+          <div class="view-scroll"><TreeView data={parsedJson} /></div>
+        {/await}
       {:else if outputViewMode === 'form' && parsedJson !== undefined}
-        <div class="view-scroll"><FormView data={parsedJson} /></div>
+        {#await import('./lib/FormView.svelte') then { default: FormView }}
+          <div class="view-scroll"><FormView data={parsedJson} /></div>
+        {/await}
       {:else if outputViewMode === 'text'}
-        <TextView text={outputCode} />
+        {#await import('./lib/TextView.svelte') then { default: TextView }}
+          <TextView text={outputCode} />
+        {/await}
       {:else if outputViewMode === 'view' && parsedJson !== undefined}
-        <div class="view-scroll"><CardView data={parsedJson} /></div>
+        {#await import('./lib/CardView.svelte') then { default: CardView }}
+          <div class="view-scroll"><CardView data={parsedJson} /></div>
+        {/await}
       {:else if outputViewMode === 'table' && parsedJson !== undefined}
-        <TableView data={parsedJson} />
+        {#await import('./lib/TableView.svelte') then { default: TableView }}
+          <TableView data={parsedJson} />
+        {/await}
       {:else if outputViewMode === 'graph' && parsedJson !== undefined}
-        <GraphView data={parsedJson} />
+        {#await import('./lib/GraphView.svelte') then { default: GraphView }}
+          <GraphView data={parsedJson} />
+        {/await}
       {:else if isTooLargeForDOM && usesStructuredOutput}
         <div class="view-empty">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-tertiary); margin-bottom: 12px;">
@@ -878,21 +883,35 @@
               <span style="margin-top: 8px; color: var(--text-secondary); max-width: 400px; line-height: 1.5; display: block;">This file is {((outputCode || inputCode).length / 1024 / 1024).toFixed(1)} MB. Visualizing datasets larger than 2MB may crash your browser. Please use the Code view or reduce the file size.</span>
             </div>
           {:else if outputViewMode === 'diff' && parsedDiffReport}
-            <DiffView report={parsedDiffReport} />
+            {#await import('./lib/DiffView.svelte') then { default: DiffView }}
+              <DiffView report={parsedDiffReport} />
+            {/await}
           {:else if outputViewMode === 'code'}
             <Editor bind:value={outputCode} readonly={true} />
           {:else if outputViewMode === 'tree' && parsedJson !== undefined}
-            <div class="view-scroll"><TreeView data={parsedJson} /></div>
+            {#await import('./lib/TreeView.svelte') then { default: TreeView }}
+              <div class="view-scroll"><TreeView data={parsedJson} /></div>
+            {/await}
           {:else if outputViewMode === 'form' && parsedJson !== undefined}
-            <div class="view-scroll"><FormView data={parsedJson} /></div>
+            {#await import('./lib/FormView.svelte') then { default: FormView }}
+              <div class="view-scroll"><FormView data={parsedJson} /></div>
+            {/await}
           {:else if outputViewMode === 'text'}
-            <TextView text={outputCode} />
+            {#await import('./lib/TextView.svelte') then { default: TextView }}
+              <TextView text={outputCode} />
+            {/await}
           {:else if outputViewMode === 'view' && parsedJson !== undefined}
-            <div class="view-scroll"><CardView data={parsedJson} /></div>
+            {#await import('./lib/CardView.svelte') then { default: CardView }}
+              <div class="view-scroll"><CardView data={parsedJson} /></div>
+            {/await}
           {:else if outputViewMode === 'table' && parsedJson !== undefined}
-            <TableView data={parsedJson} />
+            {#await import('./lib/TableView.svelte') then { default: TableView }}
+              <TableView data={parsedJson} />
+            {/await}
           {:else if outputViewMode === 'graph' && parsedJson !== undefined}
-            <GraphView data={parsedJson} />
+            {#await import('./lib/GraphView.svelte') then { default: GraphView }}
+              <GraphView data={parsedJson} />
+            {/await}
           {:else if usesStructuredOutput && parsedJson === undefined && inputCode.trim()}
             <div class="view-empty">
               <span>Invalid JSON — fix errors or run Repair to use this view</span>
@@ -1916,6 +1935,16 @@
 
     .site-footer {
       padding: 28px 16px 20px;
+    }
+
+    .seo-content {
+      margin: 32px auto 24px;
+      padding: 0 16px;
+    }
+
+    .seo-content h2 {
+      font-size: 16px;
+      margin: 24px 0 12px;
     }
   }
 
