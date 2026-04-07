@@ -75,6 +75,8 @@
     }
   });
 
+  let { siteMode = 'main' } = $props<{ siteMode?: string }>();
+
   let inputCode = $state('');
   let compareCode = $state('');
   let outputCode = $state('');
@@ -82,7 +84,9 @@
   
   let EditorComponent = $state<ComponentType>();
 
-  let currentAction = $state<Action>('FORMAT');
+  let currentAction = $state<Action>(
+    siteMode === 'table' ? 'TABLE' : (siteMode === 'visualizer' ? 'VISUALIZE' : 'FORMAT')
+  );
   let currentSpace = $state<string | number>(2);
   let currentTargetFormat = $state<TargetFormat>('YAML');
   let fileInput = $state<HTMLInputElement>();
@@ -95,7 +99,7 @@
   let fullscreenPanel = $state<'input' | 'output' | null>(null);
   let popoutMode = $state<'input' | 'output' | null>(null);
 
-  let outputViewMode = $state<ViewMode>('code');
+  let outputViewMode = $state<ViewMode>(defaultViewModeForAction(currentAction));
   let showViewMenu = $state(false);
   let usesStructuredOutput = $derived(
     outputViewMode === 'diff'
@@ -893,7 +897,7 @@
               <DiffView report={parsedDiffReport} />
             {/await}
           {:else if outputViewMode === 'code'}
-            <Editor bind:value={outputCode} readonly={true} />
+            {#if EditorComponent}<EditorComponent bind:value={outputCode} readonly={true} />{/if}
           {:else if outputViewMode === 'tree' && parsedJson !== undefined}
             {#await import('./lib/TreeView.svelte') then { default: TreeView }}
               <div class="view-scroll"><TreeView data={parsedJson} /></div>
