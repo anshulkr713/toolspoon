@@ -1023,6 +1023,10 @@
         <a href="#card" onclick={(e) => { e.preventDefault(); outputViewMode = 'view'; }}>Card View</a>
       </div>
       <div class="footer-col">
+        <h4>Spirituality</h4>
+        <a href="https://mantra.toolspoon.com/japacounter" target="_blank" rel="noopener noreferrer">Japa Counter</a>
+      </div>
+      <div class="footer-col">
         <h4>Company</h4>
         <a href="/about/">About Us</a>
         <a href="/contact/">Contact Us</a>
